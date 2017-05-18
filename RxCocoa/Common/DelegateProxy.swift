@@ -181,6 +181,20 @@ open class DelegateProxy : _RXDelegateProxy {
         methodInvokedForSelector[selector]?.on(.next(arguments))
     }
 
+    open override func _sentMessage(_ selector: Selector, withArguments arguments: [Any], return returnBlock: @escaping () -> Any) {
+        print("swift sent message has return value")
+        sentMessageForSelector[selector]?.on(.next(arguments))
+        
+        print("\(returnBlock())")
+    }
+    
+    open override func _methodInvoked(_ selector: Selector, withArguments arguments: [Any], return returnBlock: @escaping () -> Any) {
+        print("\(selector)")
+        methodInvokedForSelector[selector]?.on(.next(arguments))
+        print("swift method invoce has return value")
+        print("\(returnBlock())")
+    }
+    
     /// Returns tag used to identify associated object.
     ///
     /// - returns: Associated object tag.
