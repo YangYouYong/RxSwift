@@ -21,6 +21,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 -(void)_sentMessage:(SEL)selector withArguments:(NSArray*)arguments;
 -(void)_methodInvoked:(SEL)selector withArguments:(NSArray*)arguments;
+-(void)_sentMessage:(SEL)selector withArguments:(NSArray *)arguments returnBlock:(id(^)(void))returnBlock;
+-(void)_methodInvoked:(SEL)selector withArguments:(NSArray*)arguments returnBlock:(id(^)(void))returnBlock;
 
 @end
 

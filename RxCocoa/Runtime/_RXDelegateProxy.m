@@ -119,29 +119,116 @@ static NSMutableDictionary *voidSelectorsPerClass = nil;
     NSArray *arguments = nil;
     if (isVoid) {
         arguments = RX_extract_arguments(anInvocation);
+        NSLog(@"runtime_arguments_:%@",arguments);
         [self _sentMessage:anInvocation.selector withArguments:arguments];
     }
     
     if (self._forwardToDelegate && [self._forwardToDelegate respondsToSelector:anInvocation.selector]) {
         [anInvocation invokeWithTarget:self._forwardToDelegate];
     }
-
+    
+    if (!isVoid) {
+        arguments = RX_extract_arguments(anInvocation);
+        NSLog(@"runtime_arguments_has_returnValue:%@",arguments);
+        [self _sentMessage:anInvocation.selector withArguments:arguments returnBlock:^id _Nonnull{
+            
+            return [self invicationGetReturnValue:anInvocation];
+        }];
+    }
+    
     if (isVoid) {
         [self _methodInvoked:anInvocation.selector withArguments:arguments];
+    }else{
+        [self _methodInvoked:anInvocation.selector withArguments:arguments returnBlock:^id _Nonnull{
+            return [self invicationGetReturnValue:anInvocation];
+        }];
     }
 }
 
 // abstract method
 -(void)_sentMessage:(SEL)selector withArguments:(NSArray *)arguments {
-
+    
 }
 
 // abstract method
 -(void)_methodInvoked:(SEL)selector withArguments:(NSArray *)arguments {
+    
+}
 
+-(void)_sentMessage:(SEL)selector withArguments:(NSArray *)arguments returnBlock:(id  _Nonnull (^)(void))returnBlock {
+    
+}
+
+-(void)_methodInvoked:(SEL)selector withArguments:(NSArray *)arguments returnBlock:(id  _Nonnull (^)(void))returnBlock {
+    
 }
 
 -(void)dealloc {
+}
+
+// private
+- (id)invicationGetReturnValue:(NSInvocation *)anInvocation {
+    NSString *returnTypeString = [[NSString alloc] initWithCString:[[anInvocation methodSignature] methodReturnType]
+                                                          encoding:NSASCIIStringEncoding];
+    NSLog(@"____%@",returnTypeString);
+    id returnValue;
+    if ([returnTypeString isEqualToString:@"q"]) {
+        // long long
+        long long d;
+        [anInvocation getReturnValue:&d];
+        returnValue = [NSNumber numberWithLongLong:d];
+    }
+    if ([returnTypeString isEqualToString:@"i"]) {
+        // int
+        int d;
+        [anInvocation getReturnValue:&d];
+        returnValue = [NSNumber numberWithInt:d];
+    }
+    if ([returnTypeString isEqualToString:@"l"]) {
+        // long
+        long d;
+        [anInvocation getReturnValue:&d];
+        returnValue = [NSNumber numberWithLong:d];
+    }
+    if ([returnTypeString isEqualToString:@"I"]) {
+        // unsigned int
+        unsigned int d;
+        [anInvocation getReturnValue:&d];
+        returnValue = [NSNumber numberWithUnsignedInt:d];
+    }
+    if ([returnTypeString isEqualToString:@"L"]) {
+        // unsigned long
+        unsigned long d;
+        [anInvocation getReturnValue:&d];
+        returnValue = [NSNumber numberWithUnsignedLong:d];
+    }
+    if ([returnTypeString isEqualToString:@"Q"]) {
+        // unsigned long long
+        unsigned long long d;
+        [anInvocation getReturnValue:&d];
+        returnValue = [NSNumber numberWithUnsignedLongLong:d];
+    }
+    if ([returnTypeString isEqualToString:@"f"]) {
+        // float
+        float d;
+        [anInvocation getReturnValue:&d];
+        returnValue = [NSNumber numberWithFloat:d];
+    }
+    if ([returnTypeString isEqualToString:@"d"]) {
+        // double
+        double d;
+        [anInvocation getReturnValue:&d];
+        returnValue = [NSNumber numberWithDouble:d];
+    }
+    if ([returnTypeString isEqualToString:@"@"]) {
+        // 对象
+        id d;
+        [anInvocation getReturnValue:&d];
+        returnValue = d;
+    }
+    
+    NSLog(@"returnValue____ %@",returnValue);
+    return returnValue;
 }
 
 @end
