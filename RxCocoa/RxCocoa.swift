@@ -35,6 +35,11 @@ public enum RxCocoaError
     case castingError(object: Any, targetType: Any.Type)
 }
 
+public enum HeightType {
+    case row
+    case header
+    case footer
+}
 
 // MARK: Debug descriptions
 
