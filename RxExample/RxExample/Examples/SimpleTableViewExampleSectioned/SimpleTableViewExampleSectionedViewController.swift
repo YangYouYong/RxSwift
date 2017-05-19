@@ -115,131 +115,115 @@ class ThirdViewHeader: SimpleViewHeader {
 }
 
 class SimpleTableViewExampleSectionedViewController
-    : ViewController, UITableViewDelegate {
+    : ViewController {
     @IBOutlet weak var tableView: UITableView!
 
-//    let dataSource = RxTableViewSectionedReloadDataSource<SectionModel<String, Double>>()
+    let dataSource = RxTableViewSectionedReloadDataSource<SectionModel<String, Double>>()
 
-//    override func viewDidLoad() {
-//        super.viewDidLoad()
-//
-////        let dataSource = self.dataSource
-//
-//        let items = Observable.just([
-//            SectionModel(model: "First section", items: [
-//                    1.0,
-//                    2.0,
-//                    3.0
-//                ]),
-//            SectionModel(model: "Second section", items: [
-//                    1.0,
-//                    2.0,
-//                    3.0
-//                ]),
-//            SectionModel(model: "Third section", items: [
-//                    1.0,
-//                    2.0,
-//                    3.0
-//                ])
-//            ])
-        let dataSource = RxTableViewSectionedReloadDataSource<SectionModel<String, Double>>()
-    
-        override func viewDidLoad() {
-            super.viewDidLoad()
-            
-            let dataSource = self.dataSource
-            
-            let items = Observable.just([
-                SectionModel(model: "First section", items: [
-                    1.0,
-                    2.0,
-                    3.0
-                    ]),
-                SectionModel(model: "Second section", items: [
-                    1.0,
-                    2.0,
-                    3.0
-                    ]),
-                SectionModel(model: "Third section", items: [
-                    1.0,
-                    2.0,
-                    3.0
-                    ])
-                ])
-            
-            dataSource.configureCell = { (_, tv, indexPath, element) in
-                let cell = tv.dequeueReusableCell(withIdentifier: "Cell")!
-                cell.textLabel?.text = "\(element) @ row \(indexPath.row)"
-                return cell
-            }
-            
-            dataSource.titleForHeaderInSection = { dataSource, sectionIndex in
-                return dataSource[sectionIndex].model
-            }
-            
-            items
-                .bind(to: tableView.rx.items(dataSource: dataSource))
-                .disposed(by: disposeBag)
-            
-            tableView.rx
-                .itemSelected
-                .map { indexPath in
-                    return (indexPath, dataSource[indexPath])
-                }
-                .subscribe(onNext: { indexPath, model in
-                    DefaultWireframe.presentAlert("Tapped `\(model)` @ \(indexPath)")
-                })
-                .disposed(by: disposeBag)
-            
-            tableView.rx
-                .setDelegate(self)
-                .disposed(by: disposeBag)
+    let delegate = RxTableViewSectionedReloadDelegate<SectionModel<String, Double>>()
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
         
-//        let registerSections:[(String,RxTableViewSectionProxy.Type, Int, HeightType)]
-//            
-//            = [("sectionIdentifier", FirstViewHeader.self, 0, .header),
-//               ("sectionIdentifier1", FirstViewHeader.self, 0, .footer),
-//               ("sectionIdentifier2", SecondViewHeader.self, 1, .header),
-//               ("sectionIdentifier3", SecondViewHeader.self, 1, .footer),
-//               ("sectionIdentifier4", ThirdViewHeader.self, 2, .footer),
-//               ("sectionIdentifier5", ThirdViewHeader.self, 2, .footer),
-//               ("sectionIdentifier", FirstViewHeader.self, 0, .row)]
-//        
-//        items.bind(to: tableView.rx.items(cellIdentifier: "Cell", cellType: UITableViewCell.self)){ (row, element, cell) in
-//            cell.textLabel?.text = "\(element) @ row \(row)"
-//            print("cell inited \(row)")
-//            }
-//            .disposed(by: disposeBag)
-//        
-//        items.bind(to: tableView.rx.sectionViews(registerSections)){
-//            (row, element, view, viewType) in
-//            
-//            if row.section == 0 {
-//                let v = view as! FirstViewHeader
-//                v.contentView.backgroundColor = .yellow
-//                v.textLabel?.text = "\(element) @ section \(row)"
-//            }
-//            
-//            if row.section == 1 {
-//                let v = view as! SecondViewHeader
-//                v.contentView.backgroundColor = .cyan
-//                v.textLabel?.text = "\(element) @ section \(row)"
-//            }
-//            
-//            if row.section == 2 {
-//                let v = view as! SecondViewHeader
-//                v.contentView.backgroundColor = .magenta
-//                v.textLabel?.text = "\(element) @ section \(row)"
-//            }
-//            }.disposed(by: disposeBag)
-    }
+        let dataSource = self.dataSource
+        let delegate = self.delegate
+        
+        let items = Observable.just([
+            SectionModel(model: "First section", items: [
+                1.0,
+                2.0,
+                3.0
+                ]),
+            SectionModel(model: "Second section", items: [
+                1.0,
+                2.0,
+                3.0
+                ]),
+            SectionModel(model: "Third section", items: [
+                1.0,
+                2.0,
+                3.0
+                ])
+            ])
+        
+        dataSource.configureCell = { (_, tv, indexPath, element) in
+            let cell = tv.dequeueReusableCell(withIdentifier: "Cell")!
+            cell.textLabel?.text = "\(element) @ row \(indexPath.row)"
+            return cell
+        }
+        
+        delegate.configureSection = { (_, tv, indexPath, element, type) in
+            var identifier = "section"
+            var sectionClass: AnyClass = FirstViewHeader.self
+            if indexPath.section == 0 {
+                tv.register(sectionClass, forHeaderFooterViewReuseIdentifier: identifier)
+            }else if indexPath.section == 1 {
+                identifier = "FirstSection"
+                sectionClass = SecondViewHeader.self
+                tv.register(sectionClass, forHeaderFooterViewReuseIdentifier: identifier)
+            }else{
+                identifier = "SecondSection"
+                sectionClass = ThirdViewHeader.self
+                tv.register(sectionClass, forHeaderFooterViewReuseIdentifier: identifier)
+            }
 
-    // to prevent swipe to delete behavior
-    func tableView(_ tableView: UITableView, editingStyleForRowAt indexPath: IndexPath) -> UITableViewCellEditingStyle {
-        return .none
+            var v: RxTableViewSectionProxy
+            if let view = tv.dequeueReusableHeaderFooterView(withIdentifier: identifier) as? RxTableViewSectionProxy {
+                v = view
+            }else {
+                v = RxTableViewSectionProxy(reuseIdentifier: identifier)
+            }
+            v.textLabel?.text = "\(element)"
+            v.contentView.backgroundColor = .randomColor
+            print("react____\(v)")
+            return v
+        }
+        
+        delegate.sectionAndCellHeight = { (_, tv, indexPath, element, type) in
+            var sectionClass: SimpleViewHeader.Type = FirstViewHeader.self
+            if indexPath.section == 0 {
+            }else if indexPath.section == 1 {
+                sectionClass = SecondViewHeader.self
+            }else{
+                sectionClass = ThirdViewHeader.self
+            }
+            
+            return sectionClass.heightForSection(withItem: element as AnyObject, indexPath: indexPath, sectionType: type)
+        }
+        delegate.cellHeight = { (_, tv, indexPath, element, type) in
+            var sectionClass: SimpleViewHeader.Type = FirstViewHeader.self
+            if indexPath.section == 0 {
+            }else if indexPath.section == 1 {
+                sectionClass = SecondViewHeader.self
+            }else{
+                sectionClass = ThirdViewHeader.self
+            }
+            
+            return sectionClass.heightForSection(withItem: element as AnyObject, indexPath: indexPath, sectionType: type)
+        }
+        
+        items
+            .bind(to: tableView.rx.items(dataSource: dataSource))
+            .disposed(by: disposeBag)
+        
+        items.bind(to: tableView.rx.sectionViews(delegate: delegate))
+             .disposed(by: disposeBag)
+        
+        tableView.rx
+            .itemSelected
+            .map { indexPath in
+                return (indexPath, dataSource[indexPath])
+            }
+            .subscribe(onNext: { indexPath, model in
+                DefaultWireframe.presentAlert("Tapped `\(model)` @ \(indexPath)")
+            })
+            .disposed(by: disposeBag)
     }
-    
-    func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
-        return 40
+}
+
+public extension UIColor {
+    public class var randomColor: UIColor {
+        let randomNum = CGFloat(arc4random()%256)
+        return UIColor(red: randomNum/255.0, green: randomNum/255.0, blue: randomNum/255.0, alpha: 1.0)
     }
 }

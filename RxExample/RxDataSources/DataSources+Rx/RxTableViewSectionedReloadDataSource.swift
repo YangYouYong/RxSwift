@@ -32,3 +32,24 @@ open class RxTableViewSectionedReloadDataSource<S: SectionModelType>
         }.on(observedEvent)
     }
 }
+
+open class RxTableViewSectionedReloadDelegate<S: SectionModelType>
+    : TableViewSectionedDelegate<S>
+    , RxTableViewDelegateType {
+    
+    public typealias Element = [S]
+    
+    public override init() {
+        super.init()
+    }
+    
+    open func tableView(_ tableView: UITableView, observedEvent: Event<Element>) {
+        UIBindingObserver(UIElement: self) { dataSource, element in
+            #if DEBUG
+                self._dataSourceBound = true
+            #endif
+            dataSource.setSections(element)
+            tableView.reloadData()
+            }.on(observedEvent)
+    }
+}
