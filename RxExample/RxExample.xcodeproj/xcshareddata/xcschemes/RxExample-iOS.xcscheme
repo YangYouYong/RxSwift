@@ -90,6 +90,11 @@
       </EnvironmentVariables>
       <AdditionalOptions>
          <AdditionalOption
+            key = "MallocStackLogging"
+            value = ""
+            isEnabled = "YES">
+         </AdditionalOption>
+         <AdditionalOption
             key = "NSZombieEnabled"
             value = "YES"
             isEnabled = "YES">

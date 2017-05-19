@@ -53,7 +53,7 @@ class APIWrappersViewController: ViewController {
 
     @IBOutlet weak var textView: UITextView!
 
-    let manager = CLLocationManager()
+//    let manager = CLLocationManager()
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -172,27 +172,27 @@ class APIWrappersViewController: ViewController {
         // MARK: CLLocationManager
 
         #if !RX_NO_MODULE
-        manager.requestWhenInUseAuthorization()
+//        manager.requestWhenInUseAuthorization()
         #endif
 
-        manager.rx.didUpdateLocations
-            .subscribe(onNext: { x in
-                print("rx.didUpdateLocations \(x)")
-            })
-            .disposed(by: disposeBag)
-
-        _ = manager.rx.didFailWithError
-            .subscribe(onNext: { x in
-                print("rx.didFailWithError \(x)")
-            })
-        
-        manager.rx.didChangeAuthorizationStatus
-            .subscribe(onNext: { status in
-                print("Authorization status \(status)")
-            })
-            .disposed(by: disposeBag)
-        
-        manager.startUpdatingLocation()
+//        manager.rx.didUpdateLocations
+//            .subscribe(onNext: { x in
+//                print("rx.didUpdateLocations \(x)")
+//            })
+//            .disposed(by: disposeBag)
+//
+//        _ = manager.rx.didFailWithError
+//            .subscribe(onNext: { x in
+//                print("rx.didFailWithError \(x)")
+//            })
+//        
+//        manager.rx.didChangeAuthorizationStatus
+//            .subscribe(onNext: { status in
+//                print("Authorization status \(status)")
+//            })
+//            .disposed(by: disposeBag)
+//        
+//        manager.startUpdatingLocation()
 
 
 

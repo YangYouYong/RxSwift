@@ -107,7 +107,7 @@ class _RxTableViewReactiveArrayDelegate
     , UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        return 44
+        return 55.0
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
@@ -133,11 +133,11 @@ class _RxTableViewReactiveArrayDelegate
     
 class RxTableViewReactiveArrayDelegateSequenceWrapper<S: Sequence>
     : RxTableViewReactiveArrayDelegate<S.Iterator.Element>
-    , RxTableViewDataSourceType {
+    , RxTableViewDelegateType {
     typealias Element = S
     
-    override init(heightFactory: @escaping HeightFactory, viewFactory: @escaping ViewFactory) {
-        super.init(heightFactory: heightFactory, viewFactory: viewFactory)
+    override init(_ viewFactory: ViewFactory? = nil , heightFactory: @escaping HeightFactory) {
+        super.init(viewFactory, heightFactory: heightFactory)
     }
     
     func tableView(_ tableView: UITableView, observedEvent: Event<S>) {
@@ -147,15 +147,14 @@ class RxTableViewReactiveArrayDelegateSequenceWrapper<S: Sequence>
             }.on(observedEvent)
     }
 }
-    
-// Please take a look at `DelegateProxyType.swift`
+
 class RxTableViewReactiveArrayDelegate<Element>
     : _RxTableViewReactiveArrayDelegate
     , SectionedViewDataSourceType {
     
     
     typealias HeightFactory = (UITableView, IndexPath, Element, HeightType) -> CGFloat
-    typealias ViewFactory = (UITableView, IndexPath, Element, HeightType) -> UIView?
+    typealias ViewFactory = (UITableView, IndexPath, Element, HeightType) -> RxTableViewSectionProxy
     
     var itemModels: [Element]? = nil
     
@@ -172,34 +171,57 @@ class RxTableViewReactiveArrayDelegate<Element>
     }
     
     let heightFactory: HeightFactory
-    let viewFactory: ViewFactory
+    let viewFactory: ViewFactory?
     
-    init(heightFactory: @escaping HeightFactory, viewFactory: @escaping ViewFactory) {
+    init( _ viewFactory: ViewFactory? = nil , heightFactory: @escaping HeightFactory) {
         self.heightFactory = heightFactory
         self.viewFactory = viewFactory
     }
     
     override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        return heightFactory(tableView, indexPath, itemModels![indexPath.row], .row)
+        if let model = itemModels?[indexPath.row] {
+            return heightFactory(tableView, indexPath, model, .row)
+        }
+        return 0
     }
     
     override func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
         let headerFooterIndexPath = IndexPath(row: 0, section: section)
-        return heightFactory(tableView, headerFooterIndexPath , itemModels![section], .header)
+        if let model = itemModels?[section] {
+            return heightFactory(tableView, headerFooterIndexPath, model, .header)
+        }
+        return 0
     }
     
     override func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
         let headerFooterIndexPath = IndexPath(row: 0, section: section)
-        return heightFactory(tableView, headerFooterIndexPath , itemModels![section], .footer)
+        if let model = itemModels?[section] {
+            return heightFactory(tableView, headerFooterIndexPath, model, .footer)
+        }
+        return 0
     }
     
     override func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
         let headerFooterIndexPath = IndexPath(row: 0, section: section)
-        return viewFactory(tableView, headerFooterIndexPath, itemModels![section], .header)
+        guard let factory = viewFactory , let model = itemModels?[section] else {
+            return nil
+        }
+        
+        if heightFactory(tableView, headerFooterIndexPath, model, .header) <= 0.01 {
+            return nil
+        }
+        return factory(tableView, headerFooterIndexPath, model, .header)
     }
+    
     override func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? {
         let headerFooterIndexPath = IndexPath(row: 0, section: section)
-        return viewFactory(tableView, headerFooterIndexPath, itemModels![section], .footer)
+        guard let factory = viewFactory , let model = itemModels?[section] else {
+            return nil
+        }
+        if heightFactory(tableView, headerFooterIndexPath, model, .footer) <= 0.01 {
+            return nil
+        }
+        return factory(tableView, headerFooterIndexPath, model, .footer)
     }
     
     // reactive

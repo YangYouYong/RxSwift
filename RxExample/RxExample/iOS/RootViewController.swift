@@ -24,11 +24,14 @@ public class RootViewController : UITableViewController {
         _ = Dependencies.sharedDependencies.reachabilityService
         
         let geoService = GeolocationService.instance
-        geoService.authorized.drive(onNext: { _ in
-
-        }).dispose()
-        geoService.location.drive(onNext: { _ in
-
-        }).dispose()
+        automaticallyAdjustsScrollViewInsets = false
+        navigationController?.automaticallyAdjustsScrollViewInsets = false
+        
+//        geoService.authorized.drive(onNext: { _ in
+//
+//        }).dispose()
+//        geoService.location.drive(onNext: { _ in
+//
+//        }).dispose()
     }
 }

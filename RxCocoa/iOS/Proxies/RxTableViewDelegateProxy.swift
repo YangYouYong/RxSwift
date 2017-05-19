@@ -30,7 +30,7 @@ class _RxTableViewReactiveDelegate
 , UITableViewDelegate {
     
     func _tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        return 44
+        return 55
     }
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         return _tableView(tableView, heightForRowAt: indexPath)
@@ -79,7 +79,7 @@ public class RxTableViewDelegateProxy
     /// For more information take a look at `DelegateProxyType`.
     public override class func currentDelegateFor(_ object: AnyObject) -> AnyObject? {
         let tableView: UITableView = castOrFatalError(object)
-        return tableView.dataSource
+        return tableView.delegate
     }
     
     /// For more information take a look at `DelegateProxyType`.

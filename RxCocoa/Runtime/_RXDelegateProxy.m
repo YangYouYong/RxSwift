@@ -94,6 +94,10 @@ static NSMutableDictionary *voidSelectorsPerClass = nil;
 
 -(void)_setForwardToDelegate:(id __nullable)forwardToDelegate retainDelegate:(BOOL)retainDelegate {
     __forwardToDelegate = forwardToDelegate;
+    if (__forwardToDelegate != nil) {        
+        NSLog(@"__forwardDelegate___%@",__forwardToDelegate);
+    }
+//    NSAssert(__forwardToDelegate == nil, @"forwardToDelegate not nil");
     if (retainDelegate) {
         self.strongForwardDelegate = forwardToDelegate;
     }
@@ -222,7 +226,7 @@ static NSMutableDictionary *voidSelectorsPerClass = nil;
     }
     if ([returnTypeString isEqualToString:@"@"]) {
         // 对象
-        id d;
+        __unsafe_unretained id d;
         [anInvocation getReturnValue:&d];
         returnValue = d;
     }

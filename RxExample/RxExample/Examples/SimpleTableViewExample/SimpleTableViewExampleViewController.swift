@@ -12,12 +12,42 @@ import RxSwift
 import RxCocoa
 #endif
 
-class SimpleTableViewExampleViewController : ViewController, UITableViewDelegate {
+class SimpleViewHeader: RxTableViewSectionProxy {
+    
+    public override class func heightForSection(withItem item: AnyObject, indexPath: IndexPath, sectionType: HeightType) -> CGFloat {
+        
+        if sectionType == .header {
+            return 50
+        } else if sectionType == .footer {
+            return 0.01
+        }else{
+            return 70
+        }
+        
+    }
+    
+    override init(reuseIdentifier: String?) {
+        super.init(reuseIdentifier: reuseIdentifier)
+        // add subViews
+    }
+    
+    required init?(coder aDecoder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    required init() {
+        fatalError("init() has not been implemented")
+    }
+}
+
+class SimpleTableViewExampleViewController : ViewController {
     @IBOutlet weak var tableView: UITableView!
 
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        automaticallyAdjustsScrollViewInsets = false
+        
         let items = Observable.just(
             (0..<20).map { "\($0)" }
         )
@@ -27,7 +57,12 @@ class SimpleTableViewExampleViewController : ViewController, UITableViewDelegate
                 cell.textLabel?.text = "\(element) @ row \(row)"
             }
             .disposed(by: disposeBag)
-
+        
+//        items.bind(to: tableView.rx.sectionViews(sectionIdentifier: "sectionIdentifier", SectionType: SimpleViewHeader.self)){
+//            (row, element, view, viewType) in
+//            view.contentView.backgroundColor = .yellow
+//            view.textLabel?.text = "\(element) @ section \(row)"
+//        }.disposed(by: disposeBag)
 
         tableView.rx
             .modelSelected(String.self)

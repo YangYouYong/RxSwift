@@ -35,13 +35,13 @@ class GeolocationViewController: ViewController {
         
         let geolocationService = GeolocationService.instance
         
-        geolocationService.authorized
-            .drive(noGeolocationView.rx.isHidden)
-            .disposed(by: disposeBag)
-        
-        geolocationService.location
-            .drive(label.rx.coordinates)
-            .disposed(by: disposeBag)
+//        geolocationService.authorized
+//            .drive(noGeolocationView.rx.isHidden)
+//            .disposed(by: disposeBag)
+//        
+//        geolocationService.location
+//            .drive(label.rx.coordinates)
+//            .disposed(by: disposeBag)
         
         button.rx.tap
             .bind { [weak self] in

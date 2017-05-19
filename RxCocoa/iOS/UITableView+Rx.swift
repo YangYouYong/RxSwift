@@ -153,6 +153,7 @@ extension Reactive where Base: UITableView {
             // setting data source will set delegate, and UITableView might get into a weird state.
             // Therefore it's better to set delegate proxy first, just to be sure.
             _ = self.delegate
+            _ = self.tableViewDelegate
             // Strong reference is needed because data source is in use until result subscription is disposed
             return source.subscribeProxyDataSource(ofObject: self.base, dataSource: dataSource, retainDataSource: true) { [weak tableView = self.base] (_: RxTableViewDataSourceProxy, event) -> Void in
                 guard let tableView = tableView else {
@@ -164,6 +165,143 @@ extension Reactive where Base: UITableView {
     }
 
 }
+    
+// header&footer
+
+extension Reactive where Base: UITableView {
+    
+    /**
+     Binds sequences of elements to table view rows.
+     
+     - parameter source: Observable sequence of items.
+     - parameter cellFactory: Transform between sequence elements and view cells.
+     - returns: Disposable object that can be used to unbind.
+     
+     Example:
+     
+     let items = Observable.just([
+     "First Item",
+     "Second Item",
+     "Third Item"
+     ])
+     
+     items
+     .bind(to: tableView.rx.items) { (tableView, row, element) in
+     let cell = tableView.dequeueReusableCell(withIdentifier: "Cell")!
+     cell.textLabel?.text = "\(element) @ row \(row)"
+     return cell
+     }
+     .disposed(by: disposeBag)
+     
+     */
+    
+    public func sectionViews<S: Sequence, O: ObservableType>
+        (_ source: O)
+        -> ( _ viewFactory: ((UITableView, IndexPath, S.Iterator.Element, HeightType) -> RxTableViewSectionProxy)? , _ heightFactory: @escaping ((UITableView, IndexPath, S.Iterator.Element, HeightType) -> CGFloat))
+        -> Disposable
+        where O.E == S {
+            return { viewFactory, heightFactory in
+                let delegate = RxTableViewReactiveArrayDelegateSequenceWrapper<S>(viewFactory,heightFactory: heightFactory)
+                return self.sectionViews(delegate: delegate)(source)
+            }
+    }
+    
+    /**
+     Binds sequences of elements to table view rows.
+     
+     - parameter cellIdentifier: Identifier used to dequeue cells.
+     - parameter source: Observable sequence of items.
+     - parameter configureCell: Transform between sequence elements and view cells.
+     - parameter cellType: Type of table view cell.
+     - returns: Disposable object that can be used to unbind.
+     
+     Example:
+     
+     let items = Observable.just([
+     "First Item",
+     "Second Item",
+     "Third Item"
+     ])
+     
+     items
+     .bind(to: tableView.rx.items(cellIdentifier: "Cell", cellType: UITableViewCell.self)) { (row, element, cell) in
+     cell.textLabel?.text = "\(element) @ row \(row)"
+     }
+     .disposed(by: disposeBag)
+     */
+    public func sectionViews<S: Sequence, View: RxTableViewSectionProxy, O : ObservableType>
+        (_ identifierDict: [(String,View.Type, Int, HeightType)])
+            -> (_ source: O)
+            -> (_ configureView: @escaping (IndexPath, S.Iterator.Element, RxTableViewSectionProxy, HeightType) -> Void)
+            -> Disposable
+            where O.E == S {
+                return { source in
+                    return { configureView in
+                        let delegate = RxTableViewReactiveArrayDelegateSequenceWrapper<S>({
+                        tv,indexPath , item, type in
+                            print("reach here")
+                            let (identifier, sectionClass, _, _) = identifierDict.filter{ (_, _,section, header) -> Bool in
+                                return ((section == indexPath.section) && (header == type))
+                            }.first!
+                            
+                            tv.register(sectionClass.self, forHeaderFooterViewReuseIdentifier: identifier)
+                            
+                            var v: RxTableViewSectionProxy
+                            if let view = tv.dequeueReusableHeaderFooterView(withIdentifier: identifier) as? View {
+                                v = view
+                            }else {
+                                v = RxTableViewSectionProxy(reuseIdentifier: identifier)
+                            }
+                            print("react____\(v)")
+                            configureView(indexPath, item, v, type)
+                            return v
+                        }){tv,indexPath , item, type in
+                            print("calculator height")
+                            print(identifierDict)
+                            let result = identifierDict.filter({ (_, _,section, header) -> Bool in
+                                print("\(section) , \(header) , \(indexPath.section) , \(type)")
+                                return ((section == indexPath.section) && (header == type))
+                                })
+                            if let (_, sectionClass, _, _) = result.first {
+                                print(sectionClass)
+                                return sectionClass.heightForSection(withItem: item as AnyObject, indexPath: indexPath, sectionType: type)
+                            }
+                            return 50
+                        }
+                        return self.sectionViews(delegate: delegate)(source)
+                    }
+                }
+        }
+    
+    
+    public func sectionViews<
+        Delegate: RxTableViewDelegateType & UITableViewDelegate,
+        O: ObservableType>
+        (delegate: Delegate)
+        -> (_ source: O)
+        -> Disposable
+        where Delegate.Element == O.E {
+            return { source in
+                // This is called for sideeffects only, and to make sure delegate proxy is in place when
+                // data source is being bound.
+                // This is needed because theoretically the data source subscription itself might
+                // call `self.rx.delegate`. If that happens, it might cause weird side effects since
+                // setting data source will set delegate, and UITableView might get into a weird state.
+                // Therefore it's better to set delegate proxy first, just to be sure.
+//                _ = self.delegate
+//                _ = self.tableViewDelegate
+                // Strong reference is needed because data source is in use until result subscription is disposed
+                return source.subscribeProxyDataSource(ofObject: self.base, dataSource: delegate, retainDataSource: true) { [weak tableView = self.base] (_: RxTableViewDelegateProxy, event) -> Void in
+                    guard let tableView = tableView else {
+                        return
+                    }
+                    print("delegate____\(delegate)")
+                    delegate.tableView(tableView, observedEvent: event)
+                }
+            }
+    }
+    
+}
 
 extension UITableView {
  
@@ -172,7 +310,7 @@ extension UITableView {
     
     - returns: Instance of delegate proxy that wraps `delegate`.
     */
-    public override func createRxDelegateProxy() -> RxScrollViewDelegateProxy {
+    public override func createRxDelegateProxy() -> RxTableViewDelegateProxy {
         return RxTableViewDelegateProxy(parentObject: self)
     }
 
@@ -196,6 +334,14 @@ extension Reactive where Base: UITableView {
     public var dataSource: DelegateProxy {
         return RxTableViewDataSourceProxy.proxyForObject(base)
     }
+    
+    public var tableViewDelegate: DelegateProxy {
+        return RxTableViewDelegateProxy.proxyForObject(base)
+    }
+    
+//    public var delegate: DelegateProxy {
+//        return RxTableViewDelegateProxy.proxyForObject(base)
+//    }
    
     /**
     Installs data source as forwarding delegate on `rx.dataSource`.

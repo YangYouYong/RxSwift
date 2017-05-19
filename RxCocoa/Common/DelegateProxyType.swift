@@ -166,12 +166,14 @@ extension DelegateProxyType {
             Self.assignProxy(proxy, toObject: object)
             assert(Self.assignedProxyFor(object) === proxy)
         }
-
+        
         let currentDelegate: AnyObject? = Self.currentDelegateFor(object)
-
+//        print("\(proxy.forwardDelegate)")
         if currentDelegate !== proxy {
             proxy.setForwardToDelegate(currentDelegate, retainDelegate: false)
             assert(proxy.forwardToDelegate() === currentDelegate)
+            
+            print("\(self)")
             Self.setCurrentDelegate(proxy, toObject: object)
             assert(Self.currentDelegateFor(object) === proxy)
             assert(proxy.forwardToDelegate() === currentDelegate)
@@ -191,6 +193,10 @@ extension DelegateProxyType {
         weak var weakForwardDelegate: AnyObject? = forwardDelegate
 
         let proxy = Self.proxyForObject(object)
+        
+        let fd = proxy.forwardToDelegate()
+        print("________\(String(describing: fd))")
+        print("\(proxy.forwardToDelegate() === nil)")
         
         assert(proxy.forwardToDelegate() === nil, "This is a feature to warn you that there is already a delegate (or data source) set somewhere previously. The action you are trying to perform will clear that delegate (data source) and that means that some of your features that depend on that delegate (data source) being set will likely stop working.\n" +
             "If you are ok with this, try to set delegate (data source) to `nil` in front of this operation.\n" +
